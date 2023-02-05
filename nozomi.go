@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"net/http"
 	"log"
 	"os"
 
@@ -18,8 +18,7 @@ Just add me to your group, make me admin (to allow deleting the forwards), and I
 func main() {
 	token := os.Getenv("TOKEN")
 	if token == "" {
-		fmt.Println("Unable to read bot token. Make sure you export $TOKEN in the environment.")
-		os.Exit(1)
+		log.Fatalln("Unable to read bot token. Make sure you export $TOKEN in the environment.")
 	}
 
 	bot, err := tgbot.NewBotAPI(token)
@@ -28,14 +27,49 @@ func main() {
 	}
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
-	u := tgbot.NewUpdate(0)
-	u.Timeout = 60
+	var updates UpdatesChannel
 
-	updates, err := bot.GetUpdatesChan(u)
-	if err != nil {
-		log.Fatalln(err)
+	domain := os.Getenv("DOMAIN")
+	if domain == "" {
+		log.Warning("Unable to read domain for incoming requests. Make sure to set $DOMAIN in the environment if you want to use webhooks. Falling back to the polling method.")
+		
+		u := tgbot.NewUpdate(0)
+		u.Timeout = 60
+
+		channel, err := bot.GetUpdatesChan(u)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		updates = channel
+	} else {
+		log.Printf("Using %s as a domain name", domain)
+		
+		wh, _ := tgbotapi.NewWebhook("https://" + domain + "/" + bot.Token)
+	
+		_, err = bot.Request(wh)
+		if err != nil {
+			log.Fatal(err)
+		}
+	
+		info, err := bot.GetWebhookInfo()
+		if err != nil {
+			log.Fatal(err)
+		}
+	
+		if info.LastErrorDate != 0 {
+			log.Printf("Telegram callback failed: %s", info.LastErrorMessage)
+		}
+
+		port := os.Getenv("PORT")
+		if port == "" {
+			port = "3000"
+		}
+		go http.ListenAndServe("0.0.0.0:" + port, nil)
+
+		updates = bot.ListenForWebhook("/" + bot.Token)
 	}
-
+	
 	for update := range updates {
 		if update.Message == nil {
 			continue
