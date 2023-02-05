@@ -8,7 +8,7 @@ RUN go mod download && go mod verify
 COPY . .
 RUN go build -v -o /nozomi ./...
 
-FROM alpine
+FROM busybox
 
 COPY --from=builder /nozomi /usr/bin/nozomi
 
