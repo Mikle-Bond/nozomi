@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	tgbot "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 var HELP_MSG = `
@@ -36,11 +36,8 @@ func main() {
 		u := tgbot.NewUpdate(0)
 		u.Timeout = 60
 
-		channel, err := bot.GetUpdatesChan(u)
-		if err != nil {
-			log.Fatalln(err)
-		}
-
+		channel := bot.GetUpdatesChan(u)
+		
 		updates = channel
 	} else {
 		log.Printf("Using %s as a domain name", domain)
@@ -103,24 +100,24 @@ func resendMedia(bot *tgbot.BotAPI, message *tgbot.Message) {
 	var err error
 
 	if message.Photo != nil {
-		photoSizes := *message.Photo
+		photoSizes := message.Photo
 		if len(photoSizes) > 0 {
-			photoMsg := tgbot.NewPhotoShare(
+			photoMsg := tgbot.NewPhoto(
 				message.Chat.ID,
-				photoSizes[len(photoSizes)-1].FileID,
+				tgbot.FileID(photoSizes[len(photoSizes)-1].FileID),
 			)
 			_, err = bot.Send(photoMsg)
 		}
 	} else if message.Video != nil {
-		videoMsg := tgbot.NewVideoShare(
+		videoMsg := tgbot.NewVideo(
 			message.Chat.ID,
-			message.Video.FileID,
+			tgbot.FileID(message.Video.FileID),
 		)
 		_, err = bot.Send(videoMsg)
 	} else if message.Animation != nil {
-		gifMsg := tgbot.NewAnimationShare(
+		gifMsg := tgbot.NewAnimation(
 			message.Chat.ID,
-			message.Animation.FileID,
+			tgbot.FileID(message.Animation.FileID),
 		)
 		_, err = bot.Send(gifMsg)
 	} else {
@@ -128,8 +125,6 @@ func resendMedia(bot *tgbot.BotAPI, message *tgbot.Message) {
 	}
 
 	if err == nil {
-		bot.DeleteMessage(
-			tgbot.NewDeleteMessage(message.Chat.ID, message.MessageID),
-		)
+		bot.Send(tgbot.NewDeleteMessage(message.Chat.ID, message.MessageID))
 	}
 }
