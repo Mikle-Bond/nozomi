@@ -27,11 +27,11 @@ func main() {
 	}
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
-	var updates UpdatesChannel
+	var updates tgbot.UpdatesChannel
 
 	domain := os.Getenv("DOMAIN")
 	if domain == "" {
-		log.Warning("Unable to read domain for incoming requests. Make sure to set $DOMAIN in the environment if you want to use webhooks. Falling back to the polling method.")
+		log.Println("Unable to read domain for incoming requests. Make sure to set $DOMAIN in the environment if you want to use webhooks. Falling back to the polling method.")
 		
 		u := tgbot.NewUpdate(0)
 		u.Timeout = 60
@@ -45,7 +45,7 @@ func main() {
 	} else {
 		log.Printf("Using %s as a domain name", domain)
 		
-		wh, _ := tgbotapi.NewWebhook("https://" + domain + "/" + bot.Token)
+		wh, _ := tgbot.NewWebhook("https://" + domain + "/" + bot.Token)
 	
 		_, err = bot.Request(wh)
 		if err != nil {
