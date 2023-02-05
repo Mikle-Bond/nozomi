@@ -27,6 +27,10 @@ func main() {
 	}
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
+	bot.Debug = true
+
+	bot.Send(tgbot.DeleteWebhookConfig{DropPendingUpdates: false})
+
 	var updates tgbot.UpdatesChannel
 
 	domain := os.Getenv("DOMAIN")
