@@ -46,7 +46,7 @@ func main() {
 	} else {
 		log.Printf("Using %s as a domain name", domain)
 		
-		wh, _ := tgbot.NewWebhook("https://" + domain + "/" + bot.Token)
+		wh, _ := tgbot.NewWebhook("https://" + domain + ":443/" + bot.Token)
 	
 		_, err = bot.Request(wh)
 		if err != nil {
@@ -66,7 +66,7 @@ func main() {
 		if port == "" {
 			port = "3000"
 		}
-		go http.ListenAndServe("0.0.0.0:" + port, nil)
+		go http.ListenAndServe(":" + port, nil)
 
 		updates = bot.ListenForWebhook("/" + bot.Token)
 	}
