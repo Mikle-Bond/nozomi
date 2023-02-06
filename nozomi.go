@@ -1,9 +1,12 @@
 package main
 
 import (
-	"net/http"
 	"log"
+	"net/http"
 	"os"
+	"strings"
+
+	"golang.org/x/exp/slices"
 
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -27,7 +30,11 @@ func main() {
 	}
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
-	bot.Debug = true
+	debug := os.Getenv("DEBUG")
+	if !slices.Contains([]string{"", "0", "false"}, strings.ToLower(debug)) {
+		log.Println("Running in debug mode due to DEBUG environment variable.")
+		bot.Debug = true
+	}
 
 	bot.Send(tgbot.DeleteWebhookConfig{DropPendingUpdates: false})
 
@@ -67,6 +74,7 @@ func main() {
 		if port == "" {
 			port = "3000"
 		}
+		log.Println("Listening on port", port)
 		go http.ListenAndServe(":" + port, nil)
 
 		updates = bot.ListenForWebhook("/" + bot.Token)
