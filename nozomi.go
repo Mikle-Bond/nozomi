@@ -47,11 +47,7 @@ func main() {
 		log.Printf("Using %s as a domain name", domain)
 		
 		wh, _ := tgbot.NewWebhook("https://" + domain + ":443/" + bot.Token)
-		wh.AllowedUpdates = append(wh.AllowedUpdates,
-			tgbot.UpdateTypeChatMember,
-			tgbot.UpdateTypeMessage,
-			tgbot.UpdateTypeChannelPost,
-		)
+		wh.AllowedUpdates = []string{}
 	
 		_, err = bot.Request(wh)
 		if err != nil {
