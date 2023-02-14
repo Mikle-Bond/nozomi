@@ -43,29 +43,29 @@ func main() {
 	domain := os.Getenv("DOMAIN")
 	if domain == "" {
 		log.Println("Unable to read domain for incoming requests. Make sure to set $DOMAIN in the environment if you want to use webhooks. Falling back to the polling method.")
-		
+
 		u := tgbot.NewUpdate(0)
 		u.Timeout = 60
 
 		channel := bot.GetUpdatesChan(u)
-		
+
 		updates = channel
 	} else {
 		log.Printf("Using %s as a domain name", domain)
-		
+
 		wh, _ := tgbot.NewWebhook("https://" + domain + ":443/" + bot.Token)
 		wh.AllowedUpdates = []string{}
-	
+
 		_, err = bot.Request(wh)
 		if err != nil {
 			log.Fatal(err)
 		}
-	
+
 		info, err := bot.GetWebhookInfo()
 		if err != nil {
 			log.Fatal(err)
 		}
-	
+
 		if info.LastErrorDate != 0 {
 			log.Printf("Telegram callback failed: %s", info.LastErrorMessage)
 		}
@@ -75,11 +75,11 @@ func main() {
 			port = "3000"
 		}
 		log.Println("Listening on port", port)
-		go http.ListenAndServe(":" + port, nil)
+		go http.ListenAndServe(":"+port, nil)
 
 		updates = bot.ListenForWebhook("/" + bot.Token)
 	}
-	
+
 	for update := range updates {
 		if update.Message == nil {
 			continue
@@ -98,6 +98,9 @@ func main() {
 				msg.Text = HELP_MSG
 			case "help":
 				msg.Text = HELP_MSG
+			case "ugood":
+			case "vibecheck":
+				msg.Text = "yeah, I'm good, thanks"
 			}
 			bot.Send(msg)
 		}
