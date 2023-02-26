@@ -50,6 +50,8 @@ func main() {
 		channel := bot.GetUpdatesChan(u)
 
 		updates = channel
+
+		setupHealthcheck(bot, false)
 	} else {
 		log.Printf("Using %s as a domain name", domain)
 
@@ -78,6 +80,8 @@ func main() {
 		go http.ListenAndServe(":"+port, nil)
 
 		updates = bot.ListenForWebhook("/" + bot.Token)
+
+		setupHealthcheck(bot, true)
 	}
 
 	for update := range updates {
@@ -98,7 +102,6 @@ func main() {
 				msg.Text = HELP_MSG
 			case "help":
 				msg.Text = HELP_MSG
-			case "ugood":
 			case "vibecheck":
 				msg.Text = "yeah, I'm good, thanks"
 			}
@@ -143,4 +146,29 @@ func resendMedia(bot *tgbot.BotAPI, message *tgbot.Message) {
 	if err == nil {
 		bot.Send(tgbot.NewDeleteMessage(message.Chat.ID, message.MessageID))
 	}
+}
+
+func setupHealthcheck(bot *tgbot.BotAPI, withWebHooks bool) {
+	var healthcheck func(http.ResponseWriter, *http.Request)
+	if withWebHooks {
+		healthcheck = func(w http.ResponseWriter, r *http.Request) {
+			wh, err := bot.GetWebhookInfo()
+			if err != nil {
+				http.Error(w, "Cant get webhook info", http.StatusInternalServerError)
+			} else if !wh.IsSet() {
+				http.Error(w, "Webhook is not set", http.StatusInternalServerError)
+			} else if wh.PendingUpdateCount > 0 {
+				http.Error(w, wh.LastErrorMessage, http.StatusServiceUnavailable)
+			} else {
+				w.Write([]byte("OK\n"))
+			}
+		}
+	} else {
+		healthcheck = func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("Cant check health from this end, webhooks are disabled\n"))
+		}
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/health", healthcheck)
+	go http.ListenAndServe("localhost:9000", mux)
 }
