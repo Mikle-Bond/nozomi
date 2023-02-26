@@ -15,4 +15,4 @@ COPY --from=builder /nozomi /usr/bin/nozomi
 CMD ["/usr/bin/nozomi"]
 
 HEALTHCHECK --start-period=10s --interval=4m \
-    CMD wget --no-verbose --tries=1 http://localhost:9000/health || exit 1
+    CMD wget --tries=1 -qO - http://localhost:9000/health || exit 1
